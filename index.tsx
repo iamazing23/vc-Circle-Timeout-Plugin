@@ -4,11 +4,23 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
+import "./style.css";
+
 import { NavContextMenuPatchCallback } from "@api/ContextMenu";
 import { definePluginSettings } from "@api/Settings";
+import ErrorBoundary from "@components/ErrorBoundary";
 import { sendMessage } from "@utils/discord";
+import {
+    ModalCloseButton,
+    ModalContent,
+    ModalFooter,
+    ModalHeader,
+    ModalRoot,
+    ModalSize,
+    openModal,
+} from "@utils/modal";
 import definePlugin, { OptionType } from "@utils/types";
-import { Menu, SelectedChannelStore, UserStore } from "@webpack/common";
+import { Menu, SelectedChannelStore, UserStore, useState } from "@webpack/common";
 import type { User } from "discord-types/general";
 
 const settings = definePluginSettings({
@@ -26,13 +38,76 @@ const settings = definePluginSettings({
     },
 });
 
+function CustomChatBoxModal({
+    modalProps,
+    modalKey,
+    defaultMessage,
+    onSubmit,
+}: {
+    modalProps: any;
+    modalKey: string;
+    defaultMessage: string;
+    onSubmit: (message: string) => void;
+}) {
+    const [message, setMessage] = useState(defaultMessage);
+
+    return (
+        <ErrorBoundary>
+            <ModalRoot {...modalProps} size={ModalSize.SMALL}>
+                <ModalHeader>
+                    <h4 className="modal-header">Timeout Duration</h4>
+                    <div className="close-button-container">
+                        <ModalCloseButton onClick={modalProps.onClose} />
+                    </div>
+                </ModalHeader>
+
+                <ModalContent>
+                    <div className="input-container">
+                        <input
+                            type="text"
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
+                            className="custom-time single-line"
+                            placeholder="Enter timeout duration"
+                        />
+                    </div>
+                </ModalContent>
+                <ModalFooter>
+                    <button
+                        className="send-command"
+                        onClick={() => {
+                            onSubmit(message);
+                            modalProps.onClose();
+                        }}
+                    >
+                        Submit
+                    </button>
+                </ModalFooter>
+            </ModalRoot>
+        </ErrorBoundary>
+    );
+}
+
+function openCustomChatBoxModal(defaultMessage: string, onSubmit: (message: string) => void) {
+    const modalKey = "custom-chat-box-modal-" + Date.now();
+    openModal(
+        props => (
+            <CustomChatBoxModal
+                modalProps={props}
+                modalKey={modalKey}
+                defaultMessage={defaultMessage}
+                onSubmit={onSubmit}
+            />
+        ),
+        { modalKey }
+    );
+}
+
 const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: User; }) => {
     if (!user || user.id === UserStore.getCurrentUser().id) return;
     try {
         const useBan = settings.store.useBanInsteadOfMute || false;
-        const timeSettings = settings.store.timeSettings || "20m";
-
-
+        const defaultTime = settings.store.timeSettings || "20m";
 
         const getCommand = (rule: string, duration: string | null) =>
             `${useBan ? "c!ban" : "c!mute"} ${user.id}${duration ? ` ${duration}` : ""} ${rule}`;
@@ -72,16 +147,20 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                         id="r4channelmisuse"
                         label="R4 (Channel Misuse)"
                         action={() => {
-                            const command = `c!mute ${user.id} ${timeSettings} R4`;
-                            sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            openCustomChatBoxModal(defaultTime, customTime => {
+                                const command = `c!mute ${user.id} ${customTime} R4`;
+                                sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            });
                         }}
                     />
                     <Menu.MenuItem
                         id="rtc"
                         label="rtc (TEMP)"
                         action={() => {
-                            const command = `c!mute ${user.id} ${timeSettings} rtc`;
-                            sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            openCustomChatBoxModal(defaultTime, customTime => {
+                                const command = `c!mute ${user.id} ${customTime} rtc`;
+                                sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            });
                         }}
                     />
                 </Menu.MenuItem>
@@ -97,7 +176,7 @@ export default definePlugin({
     description: "Made for discord.gg/fischplaza",
     authors: [{ name: "iamazing2", id: 781235919025995787n }],
     contextMenus: {
-        "user-context": UserContext
+        "user-context": UserContext,
     },
-    settings
+    settings,
 });
