@@ -31,12 +31,28 @@ const settings = definePluginSettings({
         restartNeeded: false,
     },
     timeSettings: {
-        description: "Mute time for R4 and rtc",
+        description: "Mute time for R4",
         type: OptionType.STRING,
         default: "20m",
         restartNeeded: false,
     },
+    cleanSettings: {
+        description: "Sends `c!clean` after a mute",
+        type: OptionType.BOOLEAN,
+        default: false,
+        restartNeeded: false,
+    },
+    cleanTime: {
+        description: "Time in seconds after the mute to send `c!clean`",
+        type: OptionType.NUMBER,
+        default: 3,
+        restartNeeded: false,
+    },
 });
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).catch(err => console.error("Failed to copy to clipboard:", err));
+}
 
 function CustomChatBoxModal({
     modalProps,
@@ -125,6 +141,7 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                         action={() => {
                             const command = getCommand("R1", useBan ? null : "4w");
                             sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            copyToClipboard(user.id);
                         }}
                     />
                     <Menu.MenuItem
@@ -133,6 +150,7 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                         action={() => {
                             const command = getCommand("R2", useBan ? null : "4w");
                             sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            copyToClipboard(user.id);
                         }}
                     />
                     <Menu.MenuItem
@@ -141,6 +159,7 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                         action={() => {
                             const command = getCommand("R3", useBan ? null : "4w");
                             sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            copyToClipboard(user.id);
                         }}
                     />
                     <Menu.MenuItem
@@ -150,16 +169,7 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                             openCustomChatBoxModal(defaultTime, customTime => {
                                 const command = `c!mute ${user.id} ${customTime} R4`;
                                 sendMessage(SelectedChannelStore.getChannelId(), { content: command });
-                            });
-                        }}
-                    />
-                    <Menu.MenuItem
-                        id="rtc"
-                        label="rtc (TEMP)"
-                        action={() => {
-                            openCustomChatBoxModal(defaultTime, customTime => {
-                                const command = `c!mute ${user.id} ${customTime} rtc`;
-                                sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                                copyToClipboard(user.id);
                             });
                         }}
                     />
