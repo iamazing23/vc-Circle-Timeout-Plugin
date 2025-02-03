@@ -163,11 +163,20 @@ const UserContext: NavContextMenuPatchCallback = (children, { user }: { user: Us
                         }}
                     />
                     <Menu.MenuItem
-                        id="r4channelmisuse"
-                        label="R4 (Channel Misuse)"
+                        id="r4NSFW"
+                        label="R4 (MSFW)"
+                        action={() => {
+                            const command = getCommand("R3", useBan ? null : "4w");
+                            sendMessage(SelectedChannelStore.getChannelId(), { content: command });
+                            copyToClipboard(user.id);
+                        }}
+                    />
+                    <Menu.MenuItem
+                        id="r5channelmisuse"
+                        label="R5 (Channel Misuse)"
                         action={() => {
                             openCustomChatBoxModal(defaultTime, customTime => {
-                                const command = `c!mute ${user.id} ${customTime} R4`;
+                                const command = `c!mute ${user.id} ${customTime} R5`;
                                 sendMessage(SelectedChannelStore.getChannelId(), { content: command });
                                 copyToClipboard(user.id);
                             });
